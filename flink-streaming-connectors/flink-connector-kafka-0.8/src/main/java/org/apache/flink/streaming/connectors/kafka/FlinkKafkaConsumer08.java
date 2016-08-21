@@ -370,7 +370,7 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 		}
 		//throw meaningful exception if all the provided hosts are invalid
 		if (unknownHosts == seedBrokers.length) {
-			throw new IllegalArgumentException("All the hosts provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG 
+			throw new IllegalArgumentException("All the servers provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG 
 					+ "' config are invalid. (unknown hosts)");
 		}
 	}

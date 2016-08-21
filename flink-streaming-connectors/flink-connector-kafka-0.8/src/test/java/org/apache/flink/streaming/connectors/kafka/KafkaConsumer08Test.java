@@ -98,8 +98,8 @@ public class KafkaConsumer08Test {
 			fail();
 		}
 		catch (Exception e) {
-			assertTrue("Test should fail with all bootstrap servers invalid message!", e.getMessage().contains(
-					"All the hosts provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + "' config are invalid"));
+			assertTrue("Exception should be thrown containing 'all bootstrap servers invalid' message!", e.getMessage().contains(
+					"All the servers provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG + "' config are invalid"));
 		}
 	}
 	
@@ -107,16 +107,17 @@ public class KafkaConsumer08Test {
 	public void testAtLeastOneBootsrapServerHostIsValid() {
 		try {
 			String zookeeperConnect = "localhost:56794";
-			String bootstrapServers =  "indexistentHost:11111, localhost:22222";
+			// we declare one valid boostrap server, namely the one with 'localhost'
+			String bootstrapServers = "indexistentHost:11111, localhost:22222";
 			String groupId = "non-existent-group";
 			Properties props = createKafkaProps(zookeeperConnect, bootstrapServers, groupId);
 			new FlinkKafkaConsumer08<>(Collections.singletonList("no op topic"), new SimpleStringSchema(), props);
 			fail();
-		}
-		catch (Exception e) {
-			//test is not failing because all boostrap server hosts are invalid
-			assertFalse(e.getMessage().contains("All the hosts provided in: " + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG
-					+ " config are invalid"));
+		} catch (Exception e) {
+			// test is not failing because we have one valid boostrap server
+			assertTrue("Exception should not be thrown because of all boostrap server are invalid!",
+					!e.getMessage().contains("All the hosts provided in: " + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG
+							+ " config are invalid"));
 		}
 	}
 	
