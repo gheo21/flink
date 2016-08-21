@@ -363,7 +363,7 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 		for (String broker : seedBrokers) {
 			URL brokerUrl = NetUtils.getCorrectHostnamePort(broker.trim());
 			try {
-				InetAddress.getByName(brokerUrl.getHost().trim());
+				InetAddress.getByName(brokerUrl.getHost());
 			} catch (UnknownHostException e) {
 				unknownHosts++;
 			}
