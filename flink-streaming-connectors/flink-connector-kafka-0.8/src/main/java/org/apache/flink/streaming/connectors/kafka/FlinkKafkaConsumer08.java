@@ -359,17 +359,17 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 		checkNotNull(seedBrokersConfString, "Configuration property %s not set",
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		String[] seedBrokers = seedBrokersConfString.split(",");
-		int unkownHosts = 0;
+		int unknownHosts = 0;
 		for (String broker : seedBrokers) {
 			URL brokerUrl = NetUtils.getCorrectHostnamePort(broker.trim());
 			try {
 				InetAddress.getByName(brokerUrl.getHost().trim());
 			} catch (UnknownHostException e) {
-				unkownHosts++;
+				unknownHosts++;
 			}
 		}
 		//throw meaningful exception if all the provided hosts are invalid
-		if (unkownHosts == seedBrokers.length) {
+		if (unknownHosts == seedBrokers.length) {
 			throw new IllegalArgumentException("All the hosts provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG 
 					+ "' config are invalid. (unknown hosts)");
 		}
