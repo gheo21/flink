@@ -238,6 +238,7 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 	public static List<KafkaTopicPartitionLeader> getPartitionsForTopic(List<String> topics, Properties properties) {
 		String seedBrokersConfString = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		final int numRetries = getInt(properties, GET_PARTITIONS_RETRIES_KEY, DEFAULT_GET_PARTITIONS_RETRIES);
+		checkNotNull(seedBrokersConfString, "Configuration property %s not set", ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		String[] seedBrokers = seedBrokersConfString.split(",");
 		List<KafkaTopicPartitionLeader> partitions = new ArrayList<>();
 
@@ -347,21 +348,27 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 		}
 	}
 
+	/**
+	 * Validate that the kafka config is specified correctly.
+	 * 
+	 * @param props Properties to check
+	 */
 	private void validateKafkaConfig(Properties props) {
 		String seedBrokersConfString = props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		checkNotNull(seedBrokersConfString, "Configuration property %s not set",
 				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		String[] seedBrokers = seedBrokersConfString.split(",");
-		int unresolvableHosts = 0;
+		int unkownHosts = 0;
 		for (String broker : seedBrokers) {
 			URL brokerUrl = NetUtils.getCorrectHostnamePort(broker.trim());
 			try {
 				InetAddress.getByName(brokerUrl.getHost().trim());
 			} catch (UnknownHostException e) {
-				unresolvableHosts++;
+				unkownHosts++;
 			}
 		}
-		if (unresolvableHosts == seedBrokers.length) {
+		//throw meaningful exception if all the provided hosts are invalid
+		if (unkownHosts == seedBrokers.length) {
 			throw new IllegalArgumentException("All the hosts provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG 
 					+ "' config are invalid. (unknown hosts)");
 		}
