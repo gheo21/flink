@@ -42,7 +42,9 @@ import org.apache.flink.util.SerializedValue;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.Node;
 
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -187,7 +189,9 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 
 		this.invalidOffsetBehavior = getInvalidOffsetBehavior(props);
 		this.autoCommitInterval = PropertiesUtil.getLong(props, "auto.commit.interval.ms", 60000);
-
+		
+		// validate the kafka properties
+		validateKafkaConfig(props);
 		// Connect to a broker to get the partitions for all topics
 		List<KafkaTopicPartition> partitionInfos = 
 				KafkaTopicPartition.dropLeaderData(getPartitionsForTopic(topics, props));
@@ -234,8 +238,6 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 	public static List<KafkaTopicPartitionLeader> getPartitionsForTopic(List<String> topics, Properties properties) {
 		String seedBrokersConfString = properties.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		final int numRetries = getInt(properties, GET_PARTITIONS_RETRIES_KEY, DEFAULT_GET_PARTITIONS_RETRIES);
-
-		checkNotNull(seedBrokersConfString, "Configuration property %s not set", ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
 		String[] seedBrokers = seedBrokersConfString.split(",");
 		List<KafkaTopicPartitionLeader> partitions = new ArrayList<>();
 
@@ -342,6 +344,26 @@ public class FlinkKafkaConsumer08<T> extends FlinkKafkaConsumerBase<T> {
 		}
 		catch (NumberFormatException e) {
 			throw new IllegalArgumentException("Property 'zookeeper.connection.timeout.ms' is not a valid integer");
+		}
+	}
+
+	private void validateKafkaConfig(Properties props) {
+		String seedBrokersConfString = props.getProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+		checkNotNull(seedBrokersConfString, "Configuration property %s not set",
+				ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+		String[] seedBrokers = seedBrokersConfString.split(",");
+		int unresolvableHosts = 0;
+		for (String broker : seedBrokers) {
+			URL brokerUrl = NetUtils.getCorrectHostnamePort(broker.trim());
+			try {
+				InetAddress.getByName(brokerUrl.getHost().trim());
+			} catch (UnknownHostException e) {
+				unresolvableHosts++;
+			}
+		}
+		if (unresolvableHosts == seedBrokers.length) {
+			throw new IllegalArgumentException("All the hosts provided in: '" + ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG 
+					+ "' config are invalid. (unknown hosts)");
 		}
 	}
 
